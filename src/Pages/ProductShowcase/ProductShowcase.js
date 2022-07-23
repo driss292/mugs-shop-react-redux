@@ -1,21 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./ProductShowcase.css";
 import { useParams } from "react-router-dom";
 import inventory from "../../data/inventory";
-// import { useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 
 const ProductShowcase = () => {
     const [nbMugs, setNbMugs] = useState(1);
     const { id } = useParams();
-    // console.log(id);
+    const dispatch = useDispatch();
     const productClicked = inventory.findIndex(
         (obj) => obj.title.replace(/\s+/g, "").trim() === id
     );
-    // console.log(productClicked);
-
     const updateMugs = (e) => {
         setNbMugs(Number(e.target.value));
     };
+
+    const addingInfo = useRef();
+    let timerInfo;
+    let display = true;
+
+    const addToCart = (e) => {
+        e.preventDefault();
+
+        const itemAdded = {
+            ...inventory[productClicked],
+            quantity: nbMugs,
+        };
+        dispatch({
+            type: "ADDITEM",
+            payload: itemAdded,
+        });
+        addingInfo.current.innerText = "Ajouté au panier";
+        if (display) {
+            display = false;
+            timerInfo = setTimeout(() => {
+                addingInfo.current.innerText = "";
+                display = true;
+            }, 500);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(timerInfo);
+        };
+    }, [timerInfo]);
     return (
         <div className="showcase">
             <div className="container-img-showcase">
@@ -31,7 +60,7 @@ const ProductShowcase = () => {
             <div className="product-infos">
                 <h2>{inventory[productClicked].title}</h2>
                 <p>Prix : {inventory[productClicked].price}€</p>
-                <form>
+                <form onSubmit={addToCart}>
                     <label htmlFor="quantity">Quantité</label>
                     <input
                         type="number"
@@ -40,7 +69,7 @@ const ProductShowcase = () => {
                         onChange={updateMugs}
                     />
                     <button>Ajouter au panier</button>
-                    <span className="adding-info"></span>
+                    <span ref={addingInfo} className="adding-info"></span>
                 </form>
             </div>
         </div>
